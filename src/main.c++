@@ -1,6 +1,7 @@
 #include"stdio.h"
-#include "math.h"
-//#include "H5Cpp.h"
+#include"math.h"
+#include"iostream"
+#include"mainConfig.h"
 void printMatrix(int* a,int n){
 	int k;
 	for (int i=0; i<n;i++){
@@ -43,6 +44,8 @@ int main(int argc, char* argv[]){
 	int* a = new int[n*n];
 	int* b = new int[n*n];
 	int* c = new int[n*n];
+
+	std::cout << " Matrix Multiplication Version " << VERSION_MAJOR << "." << VERSION_MINOR << "\n";
 
 	initMatrix(a,n);
 	initMatrix(b,n);
