@@ -18,18 +18,18 @@ void printNSMatrix(int *a,int m, int n){
 	int k;
 	for (int i=0; i<m;i++){
 		for (int j=0; j<n;j++){
-			k = i * m + j;
+			k = i * n + j;
 			printf("%d\t ",a[k]);
 		}
 		printf("\n");
 	}
 	printf("\n");
-	printf("***** inside print %d %d %d\n",a[3],a[7],a[11]);
 }
 void printVector(int* a,int n){
 	for (int i=0; i<n;i++){
 			printf("%d\t ",a[i]);
 		}
+		printf("\n");
 		printf("\n");
 }
 int* init3BSymMatrix(int* a,int n){
@@ -115,14 +115,18 @@ int* gaussElimination(int* A, int* b, int* x, int n){
 	for (int i=0; i<n; i++){
 		for (int j=0; j<n+1;j++){
 			if(j<n){
-				aug[i*n + j] = A[i*n + j];
+				aug[i*(n+1) + j] = A[i*n + j];
 			}else{	
-				aug[i*n + j] = b[i];
+				aug[i*(n+1) + j] = b[i];
 			}	
-			printf("%d \t",aug[i*n+j]);
 		}
-		printf("\n");
 
+	}
+
+	for (int i=0;i<n-1;i++){
+		for(int j=i+1;j<n;j++){
+
+		}
 	}
 	printNSMatrix(aug,n,n+1);
 	delete [] aug;
