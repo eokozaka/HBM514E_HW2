@@ -3,6 +3,9 @@
 #include"iostream"
 #include"mainConfig.h"
 #include <random>
+#ifdef USE_MYSORT
+#include "sorting.h"
+#endif
 void printMatrix(int* a,int n){
 	int k;
 	for (int i=0; i<n;i++){
