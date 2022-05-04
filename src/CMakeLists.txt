@@ -14,7 +14,7 @@ configure_file(mainConfig.h.in mainConfig.h)
 if(USE_MYSORT)
 	add_subdirectory(sort)
 	list(APPEND EXTRA_LIBS SortMethods)
-	list(APPEND EXTRA_INCLUDES "${PROJECT_SOURCE_DIR/sort}")
+	#list(APPEND EXTRA_INCLUDES "${PROJECT_SOURCE_DIR/sort}")
 endif()
 
 #add the executable
@@ -24,5 +24,5 @@ target_link_libraries(gaussElimination PUBLIC ${EXTRA_LIBS})
 
 target_include_directories(gaussElimination PUBLIC
 							"${PROJECT_BINARY_DIR}"
-							${EXTRA_INCLUDES}
+							#${EXTRA_INCLUDES}
 							)	
