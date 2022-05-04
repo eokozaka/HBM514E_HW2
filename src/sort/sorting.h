@@ -1,1 +1,1 @@
-double sort(int *a,int n);
+double sort(double *a,int n);

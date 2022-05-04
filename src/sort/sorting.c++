@@ -1,4 +1,4 @@
-double sort(int *a, int n){
+double sort(double *a, int n){
 	bool sorted=false,flag = false;
 	int temp=0,swap=0;
 	while(sorted==false){

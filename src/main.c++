@@ -6,36 +6,36 @@
 #ifdef USE_MYSORT
 #include "sorting.h"
 #endif
-void printMatrix(int* a,int n){
+void printMatrix(double* a,int n){
 	int k;
 	for (int i=0; i<n;i++){
 		for (int j=0; j<n;j++){
 			k = i * n + j;
-			printf("%d\t ",a[k]);
+			printf("%f\t ",a[k]);
 		}
 		printf("\n");
 	}
 	printf("\n");
 }
-void printNSMatrix(int *a,int m, int n){
+void printNSMatrix(double *a,int m, int n){
 	int k;
 	for (int i=0; i<m;i++){
 		for (int j=0; j<n;j++){
 			k = i * n + j;
-			printf("%d\t ",a[k]);
+			printf("%f\t ",a[k]);
 		}
 		printf("\n");
 	}
 	printf("\n");
 }
-void printVector(int* a,int n){
+void printVector(double * a,int n){
 	for (int i=0; i<n;i++){
-			printf("%d\t ",a[i]);
+			printf("%f\t ",a[i]);
 		}
 		printf("\n");
 		printf("\n");
 }
-int* init3BSymMatrix(int* a,int n){
+double* init3BSymMatrix(double * a,int n){
 	int k;
 	for (int i=0; i<n;i++){
 		for (int j=0; j<n;j++){
@@ -53,7 +53,7 @@ int* init3BSymMatrix(int* a,int n){
 	}
 	return a;
 }
-int* initEyeMatrix(int* a,int n){
+double* initEyeMatrix(double* a,int n){
 	int k;
 	for (int i=0; i<n;i++){
 		for (int j=0; j<n;j++){
@@ -67,7 +67,7 @@ int* initEyeMatrix(int* a,int n){
 	}
 	return a;
 }
-int* initRandomFullMatrix(int* a,int n){
+double* initRandomFullMatrix(double* a,int n){
 	int k;
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -82,7 +82,7 @@ int* initRandomFullMatrix(int* a,int n){
 	}
 	return a;
 }
-int* initRandomVector(int* a,int n){
+double* initRandomVector(double* a,int n){
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<>distr(1,3);
@@ -93,7 +93,7 @@ int* initRandomVector(int* a,int n){
 	}
 	return a;
 }
-int* matMul(int* a,int* b, int* c, int n){
+double* matMul(double* a,double* b, double* c, int n){
 	for (int i=0; i<n;i++){
 		for (int j=0; j<n;j++){
 			for (int k=0; k<n;k++){
@@ -103,7 +103,7 @@ int* matMul(int* a,int* b, int* c, int n){
 	}
 	return c;
 }
-int* matVec(int* a,int* b, int* c, int n){
+double* matVec(double* a,double* b, double* c, int n){
 	for (int i=0; i<n;i++){
 		for (int j=0; j<n;j++){
 				c[i] += a[ i * n + j] * b[j];  
@@ -111,11 +111,30 @@ int* matVec(int* a,int* b, int* c, int n){
 	}
 	return c;
 }
+double partialPivoting(double *a, int nrow, int ncol, int icol){
+// find the maximum element and its index in icol
+	int imax,amax;
+// How to replace rows without cache misses.
+	for (int irow=icol;irow<nrow;irow++){
+		if(irow==icol){
+			amax = a[irow*ncol+icol];
+			imax = 0;
+		}
+		int k0 =irow*ncol+icol;
+		printf("Relevant elements %d %f %d\n",k0,a[k0],amax);
+		if(a[k0]>amax){
+			amax = a[irow];
+			imax = irow;
+		}
+		printf("Find max %d %d %d \n",irow,imax,amax);
+	}
+	return imax;
+}
 
-int* gaussElimination(int* A, int* b, int* x, int n){
+double* gaussElimination(double* A, double* b, double* x, int n){
 	int ncol = n+1,nrow = n;
-	int *aug = new int[ncol*nrow];
-	int  kdiag = 0, k1 = 0, k2 = 0, k3 = 0;
+	double *aug = new double[ncol*nrow];
+	int kdiag = 0, k1 = 0, k2 = 0, k3 = 0;
 	double fact = 0.0;
 // Create the augmented matrix
 	for (int i=0; i<n; i++){
@@ -135,6 +154,9 @@ int* gaussElimination(int* A, int* b, int* x, int n){
 // Forward elimination
 	printNSMatrix(aug,nrow,ncol);
 	for (int i=0;i<nrow-1;i++){
+		int rowMax;
+		rowMax = partialPivoting(aug,nrow,ncol,i);
+		printf("****** %d\n",rowMax);
 		fact = 1;
 		kdiag = i * ncol + i;
 		if(aug[kdiag] == 0){
@@ -143,7 +165,7 @@ int* gaussElimination(int* A, int* b, int* x, int n){
 		for(int j=i+1;j<nrow;j++){
 			k1 = j * ncol + i;
 			fact =double(aug[k1])/double(aug[kdiag]);
-			printf("%d %d %d %f %d %d\n",j,i,k1,fact,aug[k1],aug[kdiag]);
+			printf("%d %d %d %f %f %f\n",j,i,k1,fact,aug[k1],aug[kdiag]);
 			for(int k = 0; k<ncol;k++){
 				k2 = j*ncol + k;
 				k3 = i*ncol + k;
@@ -163,25 +185,8 @@ int* gaussElimination(int* A, int* b, int* x, int n){
 	return x;
 }
 
-int pivoting(int *a, int nrow, int ncol, int icol){
-// find the maximum element and its index in icol
-	int imax,amax;
-// How to replace rows without cache misses.
-	amax = a[icol];
-	imax = 0;
-	for (int irow=1;irow<nrow;irow++){
-		int k0 =nrow*irow+icol;
-		printf("Relevant elements %d %d %d\n",k0,a[k0],amax);
-		if(a[k0]>amax){
-			amax = a[irow];
-			imax = irow;
-		}
-		printf("Find max %d %d %d \n",irow,imax,amax);
-	}
-	return imax;
-}
 
-void rowPointers(int* a, int n){
+void rowPointers(double* a, int n){
 
 	for(int i=0;i<n;i++){
 		std::cout << "Row number " << i << " Address: "<< &a[i*n] << " Value "
@@ -196,15 +201,17 @@ int* transpose(int* a, int* at, int n){
 
 int main(int argc, char* argv[]){
 	int n = 5;
-	int *a = new int[n*n];
-	int *b = new int[n*1];
-	int *c = new int[n*1];
+	double *a = new double[n*n];
+	double *b = new double[n*1];
+	double *c = new double[n*1];
 
 	std::cout << " Matrix Multiplication Version " << VERSION_MAJOR << "." << VERSION_MINOR << "\n";
 
 	initRandomFullMatrix(a,n);
 	printMatrix(a,n);
 	rowPointers(a,n);
+	initRandomVector(b, n);
+	initRandomVector(c, n);
 #ifdef USE_MYSORT
 	sort(b, n);
 #endif
@@ -214,13 +221,13 @@ int main(int argc, char* argv[]){
 //	initRandomVector(b,n);
 //
 //	printMatrix(a,n);
-//	printVector(b,n);
+	printVector(b,n);
 //
 //	matVec(a, b, c, n);
 //
-//	printVector(c,n);
+	printVector(c,n);
 //
-//	gaussElimination(a, b, c,n);
+	gaussElimination(a, b, c,n);
 
 	delete [] a;
 	delete [] b;
