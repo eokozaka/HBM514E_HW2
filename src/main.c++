@@ -5,6 +5,7 @@
 #include <random>
 #ifdef USE_MYSORT
 #include "sorting.h"
+#include "general.h"
 #endif
 void printMatrix(double* a,int n){
 	int k;
@@ -228,6 +229,9 @@ int main(int argc, char* argv[]){
 	printVector(c,n);
 //
 	gaussElimination(a, b, c,n);
+	int kk = index1d(2,3,5);
+	printf("index for 2 3 5 is: %d\n",kk);
+		
 
 	delete [] a;
 	delete [] b;

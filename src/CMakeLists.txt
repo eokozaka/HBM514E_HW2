@@ -17,6 +17,9 @@ if(USE_MYSORT)
 	#list(APPEND EXTRA_INCLUDES "${PROJECT_SOURCE_DIR/sort}")
 endif()
 
+add_subdirectory(general)
+list(APPEND EXTRA_LIBS generalTools)
+
 #add the executable
 add_executable(gaussElimination main.c++)
 
