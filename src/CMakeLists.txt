@@ -20,6 +20,9 @@ endif()
 add_subdirectory(general)
 list(APPEND EXTRA_LIBS generalTools)
 
+add_subdirectory(directMethods)
+list(APPEND EXTRA_LIBS directMethods)
+
 #add the executable
 add_executable(gaussElimination main.c++)
 
