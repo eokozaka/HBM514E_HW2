@@ -3,10 +3,12 @@
 #include"iostream"
 #include"mainConfig.h"
 #include <random>
+#include "mpi.h"
 #ifdef USE_MYSORT
 #include "sorting.h"
-#include "general.h"
 #endif
+#include "general.h"
+#include "directMethods.h"
 double* matMul(double* a,double* b, double* c, int n){
 	for (int i=0; i<n;i++){
 		for (int j=0; j<n;j++){
@@ -46,6 +48,10 @@ int main(int argc, char* argv[]){
 	double *a = new double[n*n];
 	double *b = new double[n*1];
 	double *c = new double[n*1];
+	int nproc, iam;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &iam);
+	MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
 	std::cout << " Matrix Multiplication Version " << VERSION_MAJOR << "." << VERSION_MINOR << "\n";
 
@@ -70,7 +76,7 @@ int main(int argc, char* argv[]){
 //
 	printVector(c,n);
 //
-//	gaussElimination(a, b, c,n);
+	gaussElimination(a, b, c,n);
 	int kk = index1d(2,3,5);
 	printf("index for 2 3 5 is: %d\n",kk);
 		
@@ -78,4 +84,5 @@ int main(int argc, char* argv[]){
 	delete [] a;
 	delete [] b;
 	delete [] c;
+	MPI_Finalize();
 }
