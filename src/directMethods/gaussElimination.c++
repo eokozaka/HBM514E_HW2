@@ -11,12 +11,12 @@ double partialPivoting(double *a, int nrow, int ncol, int icol){
 			imax = 0;
 		}
 		int k0 =irow*ncol+icol;
-		printf("Relevant elements %d %f %d\n",k0,a[k0],amax);
+//		printf("Relevant elements %d %f %d\n",k0,a[k0],amax);
 		if(a[k0]>amax){
 			amax = a[irow];
 			imax = irow;
 		}
-		printf("Find max %d %d %d \n",irow,imax,amax);
+//		printf("Find max %d %d %d \n",irow,imax,amax);
 	}
 	return imax;
 }
@@ -40,27 +40,27 @@ double* gaussElimination(double* A, double* b, double* x, int n){
 //
 
 // Forward elimination
-	printNSMatrix(aug,nrow,ncol);
+//	printNSMatrix(aug,nrow,ncol);
 	for (int i=0;i<nrow-1;i++){
 		int rowMax;
 		rowMax = partialPivoting(aug,nrow,ncol,i);
-		printf("****** %d\n",rowMax);
+//		printf("****** %d\n",rowMax);
 		fact = 1;
 		kdiag = i * ncol + i;
 		if(aug[kdiag] == 0){
-			printf("Invalid Matrix!\n");
+//			printf("Invalid Matrix!\n");
 			return 0;}
 		for(int j=i+1;j<nrow;j++){
 			k1 = j * ncol + i;
 			fact =double(aug[k1])/double(aug[kdiag]);
-			printf("%d %d %d %f %f %f\n",j,i,k1,fact,aug[k1],aug[kdiag]);
+//			printf("%d %d %d %f %f %f\n",j,i,k1,fact,aug[k1],aug[kdiag]);
 			for(int k = 0; k<ncol;k++){
 				k2 = j*ncol + k;
 				k3 = i*ncol + k;
 				aug[k2] -= fact*aug[k3];
 			}
-			printf("\n");
-			printNSMatrix(aug,n,n+1);
+//			printf("\n");
+//			printNSMatrix(aug,n,n+1);
 		}
 	}
 ////////////////////////////////////

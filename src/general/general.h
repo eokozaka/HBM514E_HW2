@@ -3,6 +3,7 @@ inline int index1d(int i, int j, int n){
 	return k;
 }
 
+
 void printMatrix(double* a, int n);
 void printNSMatrix(double *a, int m, int n);
 void printVector(double *a, int n);

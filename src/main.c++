@@ -32,10 +32,10 @@ double* matVec(double* a,double* b, double* c, int n){
 
 void rowPointers(double* a, int n){
 
-	for(int i=0;i<n;i++){
-		std::cout << "Row number " << i << " Address: "<< &a[i*n] << " Value "
-			<< a[i*n]<<"\n";
-	}
+//	for(int i=0;i<n;i++){
+//		std::cout << "Row number " << i << " Address: "<< &a[i*n] << " Value "
+//			<< a[i*n]<<"\n";
+//	}
 
 }
 
@@ -44,45 +44,136 @@ int* transpose(int* a, int* at, int n){
 }
 
 int main(int argc, char* argv[]){
-	int n = 5;
-	double *a = new double[n*n];
-	double *b = new double[n*1];
-	double *c = new double[n*1];
-	int nproc, iam;
+	int n;
+	n = atoi(argv[1]);
+	int nprocs, iam;
+	MPI_Request sreq, rreq;
+	MPI_Status status;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &iam);
-	MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-	std::cout << " Matrix Multiplication Version " << VERSION_MAJOR << "." << VERSION_MINOR << "\n";
+	if(iam == 0) std::cout << " Version " << VERSION_MAJOR << "." << VERSION_MINOR << "\n";
 
-	initRandomFullMatrix(a,n);
-	printMatrix(a,n);
-	rowPointers(a,n);
-	initRandomVector(b, n);
-	initRandomVector(c, n);
+//  Calculate the number of rows per processor
+	int nRowsLocal = n / nprocs;
+//  Calculate the local beginning and ending indices for each process.
+	int iBeginGlob = iam * nRowsLocal;
+	int iEndGlob = iBeginGlob + (nRowsLocal - 1);
+//	printf("I am %d and my global indices are from %d to %d\n",iam, iBeginGlob 
+//		   ,iEndGlob);
+/*	***********************************************
+ *	Allocate the a matrix, b vector and x vector  *
+**************************************************/
+ 	double *A = new double[nRowsLocal*n];
+	double *b = new double[nRowsLocal];
+	double *xnew = new double[nRowsLocal];
+	double *xold = new double[nRowsLocal];
+	double *xres = new double[nRowsLocal];
+	double maxRes=0.0,tolerance=1.0;
 
-#ifdef USE_MYSORT
-	sort(b, n);
-#endif
+	for (int i = 0; i< nRowsLocal; i++){
+		xold[i] = 0;
+	}
 
-//	max = pivoting(a,n,n-2);
-//	printf("*** %d ***\n",max);
-//	initRandomVector(b,n);
+	MPI_Datatype xChunk; // Datatype to pass the chunks of vectors x & b.
+    MPI_Type_contiguous(nRowsLocal, MPI_DOUBLE, &xChunk);
+    MPI_Type_commit(&xChunk);
+
+	int myup, mydown;
+
+	
+    mydown = (iam + 1) % nprocs;
+	if( iam == 0)
+    myup = nprocs - 1;
+	else 
+    myup = (iam - 1) % nprocs;
+//	printf("I am %d and my up is %d and my down is %d \n",iam,myup,mydown);
 //
-//	printMatrix(a,n);
-	printVector(b,n);
-//
-//	matVec(a, b, c, n);
-//
-	printVector(c,n);
-//
-	gaussElimination(a, b, c,n);
-	int kk = index1d(2,3,5);
-	printf("index for 2 3 5 is: %d\n",kk);
-		
+	for (int i = 0; i< nRowsLocal; i++){
+		xold[i] = (iam + 1) * i;
+	}
 
-	delete [] a;
-	delete [] b;
-	delete [] c;
+	for (int i = 0; i < nRowsLocal; i++){
+		b[i] = 1;
+		int iGlobRow = iam * nRowsLocal + i;
+		for (int j = 0; j < n; j++){
+			int iGlob = iam * nRowsLocal + i;
+			if( iGlob != j ){
+				A[ i * n + j ] =  0.0 ;
+			}else{
+				A[ i * n + j ] = 1.0;
+
+			}	
+		}
+	}	
+
+//	printNSMatrix(A,nRowsLocal,n);
+
+
+//	for (int i = 0; i< nRowsLocal; i++){
+//		printf("I am %d and my xold[%d] = %f\n",iam, i, xold[i]);
+//	}
+
+
+//	for (int i = 0; i< nRowsLocal; i++){
+//		printf("I am %d and after comms my xold[%d] = %f\n",iam, i, xold[i]);
+//	}
+	
+	int counter = 1;
+	int maxIter = 100;
+	while(tolerance>1e-4 && counter < maxIter){
+		for (int iproc = 0; iproc < nprocs; iproc++){
+			MPI_Isend(xold, 1, xChunk,   myup, 101, MPI_COMM_WORLD, &sreq);
+			// Calculation of the sums
+			for (int i = 0; i < nRowsLocal;i++){
+				int iGlobRow = iam*nRowsLocal + i;
+	//			if( iam == 0){
+	//				printf("Local Row Number %d, Global Row Number %d\n", i,iGlobRow);
+	//			}
+				for (int j = 0; j < nRowsLocal; j++){
+	
+					int iLocalA  = i*n + iproc*nRowsLocal + j;
+					int	iGlobA   = iam * nRowsLocal * n + iLocalA;
+					int iGlobCol = iLocalA % n;
+	
+	//				if( iam == 0 && iGlobRow != iGlobCol){
+	//					printf("%d,%d,%d,%d ",iLocalA, iGlobA,iGlobRow,iGlobCol); // Local index of A
+	//				}
+					
+					if( iGlobRow != iGlobCol)		
+			//		xnew[i] -= A[i*n+iproc*nRowsLocal+j]*xold[j];
+					xnew[i] -= A[iLocalA]*xold[j];
+				}
+			//		if( iam == 0) printf("\n");
+			}
+	//		//Receive a chunk of x vector from bottom.
+			MPI_Recv(xold, 1, xChunk, mydown, 101, MPI_COMM_WORLD, &status);
+	//	
+			MPI_Wait(&sreq, &status);
+		}//end shift loop
+
+		for (int i = 0; i<nRowsLocal;i++){
+			int iLocalDiag = iam*nRowsLocal + i*(n+1);
+	//		printf("I am %d, local row is %d and the diag is %f\n",iam,i,A[iLocalDiag]);
+			xnew[i] = b[i] + xnew[i] / A[iLocalDiag];
+			xres[i] = abs(xnew[i] - xold[i]);
+			if (xres[i]>maxRes) maxRes = xres[i];
+			xold[i] = xnew[i];
+		}//end calculate X, local max residual and swap
+
+		//find the maximum tolerance in between processors.
+		MPI_Allreduce(&maxRes, &tolerance, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		if(iam == 0) printf("Iteration %d Residual: %f \n",counter,tolerance);
+		counter++;
+	}// end while loop
+
+	printVector(xnew, nRowsLocal);
+
+ 	delete [] A; 
+	delete [] b; 
+	delete [] xnew;
+	delete [] xold;
+	delete [] xres;
 	MPI_Finalize();
 }
