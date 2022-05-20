@@ -91,18 +91,19 @@ int main(int argc, char* argv[]){
 //	printf("I am %d and my up is %d and my down is %d \n",iam,myup,mydown);
 //
 	for (int i = 0; i< nRowsLocal; i++){
-		xold[i] = (iam + 1) * i;
+		xold[i] = 0; //(iam + 1) * i;
+		std::cout << "\r" << iam << "** " << i << " " << xold[i] << "\n";
 	}
 
 	for (int i = 0; i < nRowsLocal; i++){
-		b[i] = 1;
 		int iGlobRow = iam * nRowsLocal + i;
+		b[i] = iGlobRow;
 		for (int j = 0; j < n; j++){
 			int iGlob = iam * nRowsLocal + i;
 			if( iGlob != j ){
-				A[ i * n + j ] =  0.0 ;
+				A[ i * n + j ] = 0.500 ;
 			}else{
-				A[ i * n + j ] = 1.0;
+				A[ i * n + j ] = n;
 
 			}	
 		}
@@ -121,8 +122,8 @@ int main(int argc, char* argv[]){
 //	}
 	
 	int counter = 1;
-	int maxIter = 100;
-	while(tolerance>1e-4 && counter < maxIter){
+	int maxIter = 1000;
+	while(tolerance>1e-04 && counter <= maxIter){
 		for (int iproc = 0; iproc < nprocs; iproc++){
 			MPI_Isend(xold, 1, xChunk,   myup, 101, MPI_COMM_WORLD, &sreq);
 			// Calculation of the sums
@@ -133,7 +134,8 @@ int main(int argc, char* argv[]){
 	//			}
 				for (int j = 0; j < nRowsLocal; j++){
 	
-					int iLocalA  = i*n + iproc*nRowsLocal + j;
+					int iLocalA  = i*n + ((iproc + iam)%nprocs)*nRowsLocal + j;
+//					int iLocalA  = i*n + iproc*nRowsLocal + j;
 					int	iGlobA   = iam * nRowsLocal * n + iLocalA;
 					int iGlobCol = iLocalA % n;
 	
@@ -149,23 +151,41 @@ int main(int argc, char* argv[]){
 			}
 	//		//Receive a chunk of x vector from bottom.
 			MPI_Recv(xold, 1, xChunk, mydown, 101, MPI_COMM_WORLD, &status);
+//			MPI_Irecv(xold, 1, xChunk, mydown, 101, MPI_COMM_WORLD, &rreq);
 	//	
 			MPI_Wait(&sreq, &status);
+//			MPI_Wait(&rreq, &status);
 		}//end shift loop
+//		MPI_Isend(xold, 1, xChunk,   myup, 101, MPI_COMM_WORLD, &sreq);
+//		MPI_Irecv(xold, 1, xChunk, mydown, 101, MPI_COMM_WORLD, &rreq);
+//	//	
+//		MPI_Wait(&sreq, &status);
+//		MPI_Wait(&rreq, &status);
+
 
 		for (int i = 0; i<nRowsLocal;i++){
 			int iLocalDiag = iam*nRowsLocal + i*(n+1);
 	//		printf("I am %d, local row is %d and the diag is %f\n",iam,i,A[iLocalDiag]);
-			xnew[i] = b[i] + xnew[i] / A[iLocalDiag];
+			xnew[i] = (b[i] + xnew[i]) / A[iLocalDiag];
 			xres[i] = abs(xnew[i] - xold[i]);
+			std::cout << "\r" << iam << 
+				" index: " << i << 
+				" counter: " << counter << 
+				" b: "    << b[i] << 
+				" diag: " <<  A[iLocalDiag]	<< 
+				" xold[i] " << xold[i] << 
+				" xnew[i] " << xnew[i] << 
+				" tol " << tolerance << 
+				" xres[i] " << xres[i] <<  "\n";
 			if (xres[i]>maxRes) maxRes = xres[i];
 			xold[i] = xnew[i];
 		}//end calculate X, local max residual and swap
 
 		//find the maximum tolerance in between processors.
 		MPI_Allreduce(&maxRes, &tolerance, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-		if(iam == 0) printf("Iteration %d Residual: %f \n",counter,tolerance);
+//		if(iam == 0) printf("Iteration %d Residual: %f \n",counter,tolerance);
 		counter++;
+		maxRes = 0;
 	}// end while loop
 
 	printVector(xnew, nRowsLocal);
