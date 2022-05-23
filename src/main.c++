@@ -92,7 +92,7 @@ int main(int argc, char* argv[]){
 //
 	for (int i = 0; i< nRowsLocal; i++){
 		xold[i] = 0; //(iam + 1) * i;
-		std::cout << "\r" << iam << "** " << i << " " << xold[i] << "\n";
+//		std::cout << "\r" << iam << "** " << i << " " << xold[i] << "\n";
 	}
 
 	for (int i = 0; i < nRowsLocal; i++){
@@ -123,6 +123,8 @@ int main(int argc, char* argv[]){
 	
 	int counter = 1;
 	int maxIter = 1000;
+	double t0 = 0, t1 = 0;
+	t0 = MPI_Wtime();
 	while(tolerance>1e-04 && counter <= maxIter){
 		for (int iproc = 0; iproc < nprocs; iproc++){
 			MPI_Isend(xold, 1, xChunk,   myup, 101, MPI_COMM_WORLD, &sreq);
@@ -168,15 +170,15 @@ int main(int argc, char* argv[]){
 	//		printf("I am %d, local row is %d and the diag is %f\n",iam,i,A[iLocalDiag]);
 			xnew[i] = (b[i] + xnew[i]) / A[iLocalDiag];
 			xres[i] = abs(xnew[i] - xold[i]);
-			std::cout << "\r" << iam << 
-				" index: " << i << 
-				" counter: " << counter << 
-				" b: "    << b[i] << 
-				" diag: " <<  A[iLocalDiag]	<< 
-				" xold[i] " << xold[i] << 
-				" xnew[i] " << xnew[i] << 
-				" tol " << tolerance << 
-				" xres[i] " << xres[i] <<  "\n";
+//			std::cout << "\r" << iam << 
+//				" index: " << i << 
+//				" counter: " << counter << 
+//				" b: "    << b[i] << 
+//				" diag: " <<  A[iLocalDiag]	<< 
+//				" xold[i] " << xold[i] << 
+//				" xnew[i] " << xnew[i] << 
+//				" tol " << tolerance << 
+//				" xres[i] " << xres[i] <<  "\n";
 			if (xres[i]>maxRes) maxRes = xres[i];
 			xold[i] = xnew[i];
 		}//end calculate X, local max residual and swap
@@ -187,9 +189,14 @@ int main(int argc, char* argv[]){
 		counter++;
 		maxRes = 0;
 	}// end while loop
+	t1 = MPI_Wtime();
 
 	printVector(xnew, nRowsLocal);
-
+    MPI_Barrier(MPI_COMM_WORLD); 
+	MPI_Type_free(&xChunk); 
+	if(iam == 0){
+		printf("Parallel Time: %f\n",t1-t0);
+	}
  	delete [] A; 
 	delete [] b; 
 	delete [] xnew;
