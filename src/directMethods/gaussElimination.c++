@@ -1,6 +1,46 @@
 #include "general.h"
 #include <stdio.h>
+#include"mpi.h"
+void gaussElimination(int nprocs, int size){
+	int dims[2] = {0,0};
+	int iam;
+	int blockSize = 10; // This is the block size of a single block.
+	MPI_Comm_size(MPI_COMM_WORLD, &iam);
+	MPI_Dims_create(nprocs, 2,dims); // Let the MPI decide number of virtual blocks.
+	printf("I am %d and dimensions are: row %d and col %d", iam, dims[0], dims[1]);
+	int rowBlockSize = blockSize * dims[0]; // The number of rows on a single processor
+	int colBlockSize = blockSize * dims[1]; // The number of cols on a single processor
+	int nRowBlocks = 0, nColBlocks = 0;
 
+	if (size % rowBlockSize == 0){
+		nRowBlocks = size / rowBlockSize; // Number of "ROW" blocks 
+		printf("Number of row blocks: %d\n", nRowBlocks);                       
+	}else{
+		printf("Row size is not divisible by blocksize\n");                     
+	} 
+
+	if (size % colBlockSize == 0){
+		nColBlocks = size / colBlockSize; // Number of "COL" blocks 
+		printf("Number of col blocks: %d\n", nRowBlocks);                       
+	}else{
+		printf("Row size is not divisible by blocksize\n");                     
+	} 
+
+    int nLocalSize = blockSize * nRowBlocks * blockSize * nColBlocks;
+	// ELIMINATION STAGE.
+	// LOOP OVER GLOBAL INDEX.
+	for(int iGlob = 0; iGlob < size*size; iGlob++){
+		// - FIND THE GLOBAL I & J
+		// - CHECK IF THE ELEMENT IS ON DIAGONAL. 
+		// - WHICH PROC DOES THE DIAG BELONG??
+		// - THEN DIVIDE THE LOCAL ROW WITH THAT ELEMENT
+		// - ROW BROADCAST THAT ELEMENT AND DIVIDE THE SAME ROW
+		//   ON ALL ROW PROCS.
+		// - COLUMN BROADCAST THE DIVIDED ROW AND SUBTRACT FROM 
+		//   ALL ROWS !!BELOW!!.
+	}
+}
+/* THIS IS THE SEQUENTIAL MOCKUP
 double partialPivoting(double *a, int nrow, int ncol, int icol){
 // find the maximum element and its index in icol
 	int imax,amax;
@@ -71,4 +111,4 @@ double* gaussElimination(double* A, double* b, double* x, int n){
 // ////////////////////
 	delete [] aug;
 	return x;
-}
+}*/
