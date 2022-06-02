@@ -1,7 +1,7 @@
 #include "general.h"
 #include <stdio.h>
 #include"mpi.h"
-void gaussElimination(int nprocs, int size){
+void gaussElimination2DBlockCyclic(int nprocs, int size){
 	int dims[2] = {0,0};
 	int iam;
 	int blockSize = 10; // This is the block size of a single block.
@@ -29,7 +29,15 @@ void gaussElimination(int nprocs, int size){
     int nLocalSize = blockSize * nRowBlocks * blockSize * nColBlocks;
 	// ELIMINATION STAGE.
 	// LOOP OVER GLOBAL INDEX.
-	for(int iGlob = 0; iGlob < size*size; iGlob++){
+	for(int iGlob = 0; iGlob < size; iGlob++){
+		int rootProc;// Need a method to find root processor.
+		int rowCoord;// Row coordinate of the root processor.
+//		if (coord[0] == rowCoord && ){
+			// broadcast
+			// Find my global minimum col index.
+			// broadcast my diagonal element with its local row index
+			// to the row comm &
+//		}
 		// - FIND THE GLOBAL I & J
 		// - CHECK IF THE ELEMENT IS ON DIAGONAL. 
 		// - WHICH PROC DOES THE DIAG BELONG??
@@ -40,7 +48,6 @@ void gaussElimination(int nprocs, int size){
 		//   ALL ROWS !!BELOW!!.
 	}
 }
-/* THIS IS THE SEQUENTIAL MOCKUP
 double partialPivoting(double *a, int nrow, int ncol, int icol){
 // find the maximum element and its index in icol
 	int imax,amax;
@@ -111,4 +118,26 @@ double* gaussElimination(double* A, double* b, double* x, int n){
 // ////////////////////
 	delete [] aug;
 	return x;
-}*/
+}
+
+void gaussEliminationRowBlockCyclic(int nprocs, int size){
+	int iam;
+	double t0,t1;
+
+	// Number of rows per processor
+	int nRows = size / nprocs;
+	double *ALocal = new double[nRows*size]; 
+	double *bLocal = new double[nRows]; 
+	double *xLocal = new double[nRows]; 
+
+	// Initialize ALocal and bLocal
+	//
+	//
+	// Create data type for sending rows below
+	// +1 for the augmentation
+	MPI_Datatype rowType;
+    MPI_Type_contiguous(nRows+1, MPI_DOUBLE, &rowType);
+    MPI_Type_commit(&rowType);
+
+
+}
