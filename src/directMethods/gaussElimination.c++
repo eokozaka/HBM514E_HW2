@@ -120,8 +120,7 @@ double* gaussElimination(double* A, double* b, double* x, int n){
 	return x;
 }
 
-void gaussEliminationRowBlockCyclic(int nprocs, int size){
-	int iam;
+void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 	double t0,t1;
 
 	// Number of rows per processor
@@ -129,6 +128,7 @@ void gaussEliminationRowBlockCyclic(int nprocs, int size){
 	double *ALocal = new double[nRows*size]; 
 	double *bLocal = new double[nRows]; 
 	double *xLocal = new double[nRows]; 
+	double *sendBuf = new double[size + 1]; 
 
 	// Initialize ALocal and bLocal
 	//
@@ -138,6 +138,39 @@ void gaussEliminationRowBlockCyclic(int nprocs, int size){
 	MPI_Datatype rowType;
     MPI_Type_contiguous(nRows+1, MPI_DOUBLE, &rowType);
     MPI_Type_commit(&rowType);
+
+	//INIT MATRIX
+	for (int i=0;i<nRows;++i){
+		int globalI = iam + i * nprocs;
+	//	if(iam == 0) printf("I am %d and my globalI is %d\n",iam,globalI);
+		for (int j=0;j<size;++j){
+			int localIndex = i*size + j;
+			if(j == globalI){
+				ALocal[localIndex] = size;
+			}else{
+				ALocal[localIndex] = 0.1;
+			}
+		}
+	}
+
+	for (int i = 0; i<size;i++){ //Global loop
+		int localProc = i % nprocs;
+		int localRowIndex = i / nprocs;
+		int pivotIndex = localRowIndex * size + i;
+		if( iam == localProc){
+			for (int j = i+1; j<size; j++){
+				int local1Dindex = localRowIndex * size + j;
+				ALocal[local1Dindex] = ALocal[local1Dindex] / ALocal[pivotIndex]; // Row normalization
+				bLocal[localRowIndex] = bLocal[localRowIndex] / ALocal[pivotIndex];
+			}
+		}else{
+		}
+//		if(iam==0)printf("Global index is %d and belongs to proc %d %d\n",i,localProc,localRowIndex);
+
+	}
+
+	//if(iam == 0) printNSMatrix(ALocal,nRows,size);
+
 
 
 }

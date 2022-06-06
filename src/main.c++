@@ -53,6 +53,7 @@ int main(int argc, char* argv[]){
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
 	if(iam == 0) std::cout << " Version " << VERSION_MAJOR << "." << VERSION_MINOR << "\n";
-	jacobi(n,nprocs,iam);
+//	jacobi(n,nprocs,iam);
+	gaussEliminationRowBlockCyclic(iam,nprocs,n);
 	MPI_Finalize();
 }
