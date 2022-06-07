@@ -136,7 +136,7 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 	// Create data type for sending rows below
 	// +1 for the augmentation
 	MPI_Datatype rowType;
-    MPI_Type_contiguous(nRows+1, MPI_DOUBLE, &rowType);
+    MPI_Type_contiguous(size+1, MPI_DOUBLE, &rowType);
     MPI_Type_commit(&rowType);
 
 	//INIT MATRIX
@@ -151,7 +151,9 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 				ALocal[localIndex] = 0.1;
 			}
 		}
+		bLocal[i] = i+1;
 	}
+	for(int j=0;j<size+1;j++) sendBuf[j] = 0.0;
 
 	for (int i = 0; i<size;i++){ //Global loop
 		int localProc = i % nprocs;
@@ -161,16 +163,41 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 			for (int j = i+1; j<size; j++){
 				int local1Dindex = localRowIndex * size + j;
 				ALocal[local1Dindex] = ALocal[local1Dindex] / ALocal[pivotIndex]; // Row normalization
-				bLocal[localRowIndex] = bLocal[localRowIndex] / ALocal[pivotIndex];
 			}
-		}else{
+			bLocal[localRowIndex] = bLocal[localRowIndex] / ALocal[pivotIndex];
+			ALocal[pivotIndex] = 1.0;
+			for (int j = 0;j<size;j++){
+				int local1Dindex = localRowIndex * size + j;
+				sendBuf[j] = ALocal[local1Dindex];
+			}
+			sendBuf[size] = bLocal[localRowIndex];
+		}
+//			printf("Iam %d size %d, localRowIndex %d global row index %d\n",iam,size,localRowIndex,i);
+		MPI_Bcast(sendBuf, 1, rowType, localProc, MPI_COMM_WORLD);
+//		}else{
+		printf("***** IAM ******* %d\n ",iam);
+		printVector(sendBuf, size+1);
+		if(iam<=localProc ){
+			for(int j = localRowIndex + 1; j<nRows; j++){
+				for(int k=i+1;k<size;k++){
+				int local1Dindex = localRowIndex * size + k;
+				int pivotIndex = localRowIndex * size + i;
+				ALocal[local1Dindex] -= ALocal[pivotIndex] * sendBuf[k];
+				// Elimination for the local proc and procs before the local.
+				}
+			}
+		}else if(iam>localProc){
+			for(int j = localRowIndex; j<nRows; j++){
+				for(int k=i+1;k<size;k++){
+				// Elimination for the procs after the local.
+				int local1Dindex = localRowIndex * size + k;
+				int pivotIndex = localRowIndex * size + i;
+				ALocal[local1Dindex] -= ALocal[pivotIndex] * sendBuf[k];
+				}
+			}
 		}
 //		if(iam==0)printf("Global index is %d and belongs to proc %d %d\n",i,localProc,localRowIndex);
-
 	}
-
-	//if(iam == 0) printNSMatrix(ALocal,nRows,size);
-
-
-
+//	printNSMatrix(ALocal,nRows,size);
+//	Back substitution.
 }
