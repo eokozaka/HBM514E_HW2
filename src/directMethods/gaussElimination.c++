@@ -129,7 +129,7 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 	int nRows = size / nprocs;
 	double *ALocal = new double[nRows*size]; 
 	double *bLocal = new double[nRows]; 
-	double *xLocal = new double[nRows]; 
+	double *x = new double[size]; 
 	double *sendBuf = new double[size + 1]; 
 
 	// Initialize ALocal and bLocal
@@ -215,4 +215,18 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 	// Back substitution
 	//if(iam==1) printNSMatrix(ALocal,nRows,size);	
 //	Back substitution.
+	for (int i=size-1;i>=0;i--){
+		int localProc = i % nprocs;
+		int localRowIndex = i / nprocs;
+		int pivotIndex = localRowIndex * size + i;
+//		if(iam == 0) printf("Backsub global i is %d localProc is %d localRowInde is %d pivotIndex is %d\n",i,localProc,localRowIndex,pivotIndex);
+		if ( localProc == iam){
+			x[i] = bLocal[localRowIndex];
+			for (int j = size-1; j>i;j--){
+				x[i] -= x[j] * ALocal[localRowIndex*size + j];
+			}
+		}
+		MPI_Bcast(&x[i],1,MPI_DOUBLE,localProc,MPI_COMM_WORLD);
+	}
+	if(iam == 0) printVector(x, size);
 }
