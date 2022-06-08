@@ -1,6 +1,7 @@
 #include "general.h"
 #include <stdio.h>
 #include"mpi.h"
+// THIS METHOD IS INCOMPLETE.////////////////////////////////////////
 void gaussElimination2DBlockCyclic(int nprocs, int size){
 	int dims[2] = {0,0};
 	int iam;
@@ -48,6 +49,7 @@ void gaussElimination2DBlockCyclic(int nprocs, int size){
 		//   ALL ROWS !!BELOW!!.
 	}
 }
+// THIS METHOD IS INCOMPLETE
 double partialPivoting(double *a, int nrow, int ncol, int icol){
 // find the maximum element and its index in icol
 	int imax,amax;
@@ -67,7 +69,7 @@ double partialPivoting(double *a, int nrow, int ncol, int icol){
 	}
 	return imax;
 }
-
+// SERIAL GAUSS ELIMINATION - INCOMPLETE (BACKWARD SUBSTITUTION)
 double* gaussElimination(double* A, double* b, double* x, int n){
 	int ncol = n+1,nrow = n;
 	double *aug = new double[ncol*nrow];
@@ -160,6 +162,8 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 		int localRowIndex = i / nprocs;
 		int pivotIndex = localRowIndex * size + i;
 		if( iam == localProc){
+//		if(iam == 0) printf("Global index %d Local Proc %d localRowIndex %d pivotIndex %d\n",
+//				i,localProc,localRowIndex,pivotIndex);
 			for (int j = i+1; j<size; j++){
 				int local1Dindex = localRowIndex * size + j;
 				ALocal[local1Dindex] = ALocal[local1Dindex] / ALocal[pivotIndex]; // Row normalization
@@ -174,30 +178,41 @@ void gaussEliminationRowBlockCyclic(int iam,int nprocs, int size){
 		}
 //			printf("Iam %d size %d, localRowIndex %d global row index %d\n",iam,size,localRowIndex,i);
 		MPI_Bcast(sendBuf, 1, rowType, localProc, MPI_COMM_WORLD);
+//		if(iam == 1) printVector(sendBuf, size+1);
 //		}else{
-		printf("***** IAM ******* %d\n ",iam);
-		printVector(sendBuf, size+1);
+//		printf("***** IAM ******* %d\n ",iam);
+//		printVector(sendBuf, size+1);
 		if(iam<=localProc ){
+//			if( iam == 0){
+//				printf("I am %d inside elimination main loop %d localRowIndex is %d localProc is %d\n",iam,i,localRowIndex,localProc);
+//			}
 			for(int j = localRowIndex + 1; j<nRows; j++){
-				for(int k=i+1;k<size;k++){
-				int local1Dindex = localRowIndex * size + k;
-				int pivotIndex = localRowIndex * size + i;
+				for(int k=i;k<size;k++){
+				int local1Dindex      = j * size + k;
+				int pivotIndex        = j * size + i;
 				ALocal[local1Dindex] -= ALocal[pivotIndex] * sendBuf[k];
 				// Elimination for the local proc and procs before the local.
 				}
 			}
 		}else if(iam>localProc){
 			for(int j = localRowIndex; j<nRows; j++){
-				for(int k=i+1;k<size;k++){
+				for(int k=i;k<size;k++){
 				// Elimination for the procs after the local.
-				int local1Dindex = localRowIndex * size + k;
-				int pivotIndex = localRowIndex * size + i;
+				int local1Dindex = j * size + k;
+				int pivotIndex = j * size + i;
 				ALocal[local1Dindex] -= ALocal[pivotIndex] * sendBuf[k];
+//				if( localProc == 0 && iam == 1 && i == 3)
+//				printf("I am %d inside elimination main loop %d localRowIndex is %d localProc is %d local1Dindex is %d pivotIndex is %d and local matrix element is %f\n",iam,i,localRowIndex,localProc,local1Dindex,pivotIndex,ALocal[local1Dindex]);
 				}
 			}
 		}
 //		if(iam==0)printf("Global index is %d and belongs to proc %d %d\n",i,localProc,localRowIndex);
 	}
-//	printNSMatrix(ALocal,nRows,size);
+
+//	if(iam==0) printNSMatrix(ALocal,nRows,size);	
+//	if(iam==0) printVector(bLocal,nRows);	
+
+	// Back substitution
+	//if(iam==1) printNSMatrix(ALocal,nRows,size);	
 //	Back substitution.
 }
